@@ -34,7 +34,23 @@ class Server {
       let fs = FuzzySet(allSwearWords, false);
       const matched = fs.get(string);
 
-      return res.json(matched)
+      let data;
+
+      if (matched === null) {
+        data = {
+          score: 0.0,
+          level: 'no-risk',
+          match: null,
+        }
+      } else {
+        data = {
+          score: matched[0][0],
+          level: 'risk',
+          match: matched[0][1]
+        }
+      }
+
+      return res.json(data)
     })
   }
 
