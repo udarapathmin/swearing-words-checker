@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { checkScore } from './utils/functions';
 import { sinhalaSinglishSwearWords, sinhalaUnicodeSwearWords } from './constants/words';
-import FuzzySet from 'fuzzyset.js';
 
 class Server {
   constructor() {
@@ -19,7 +19,7 @@ class Server {
     this.app.get('/words', (req, res) => {
       return res.json([...sinhalaSinglishSwearWords, ...sinhalaUnicodeSwearWords])
     })
-  
+
     this.app.get('/words/singlish', (req, res) => {
       return res.json(sinhalaSinglishSwearWords)
     })
@@ -30,23 +30,45 @@ class Server {
 
     this.app.get('/check/:string', (req, res) => {
       const { string } = req.params;
+      const words = string.split(' ');
+      let matcher = [];
       const allSwearWords = [...sinhalaSinglishSwearWords, ...sinhalaUnicodeSwearWords];
-      let fs = FuzzySet(allSwearWords, false);
-      const matched = fs.get(string);
-
+      const checkWords = req.query.wordWise;
       let data;
+      let badWords = [];
 
-      if (matched === null) {
+      if (checkWords === '1') {
+        words.map(word => {
+          const check = allSwearWords.includes(word);
+          matcher = [...matcher, check]
+          allSwearWords.filter(bad => bad === word).map(bad => {
+            badWords.push(bad);
+          })
+
+        });
+
         data = {
-          score: 0.0,
-          level: 'no-risk',
-          match: null,
-        }
+          containsSwearWords: matcher.includes(true),
+          words: badWords.length > 0 ? badWords : null
+        };
+
       } else {
-        data = {
-          score: matched[0][0],
-          level: 'risk',
-          match: matched[0][1]
+        words.map(word => {
+          matcher = checkScore(word);
+        })
+
+        if (matcher === null) {
+          data = {
+            score: 0.0,
+            level: 'no-risk',
+            match: null,
+          }
+        } else {
+          data = {
+            score: matcher[0][0],
+            level: 'risk',
+            match: matcher[0][1]
+          }
         }
       }
 
