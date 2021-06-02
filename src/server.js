@@ -36,6 +36,7 @@ class Server {
       const checkWords = req.query.wordWise;
       let data;
       let badWords = [];
+      let wordIndexes = [];
 
       if (checkWords === '1') {
         words.map(word => {
@@ -43,13 +44,15 @@ class Server {
           matcher = [...matcher, check]
           allSwearWords.filter(bad => bad === word).map(bad => {
             badWords.push(bad);
+            wordIndexes.push(words.indexOf(bad));
           })
 
         });
 
         data = {
           containsSwearWords: matcher.includes(true),
-          words: badWords.length > 0 ? badWords : null
+          words: badWords.length > 0 ? badWords : null,
+          wordIndexes: wordIndexes
         };
 
       } else {
