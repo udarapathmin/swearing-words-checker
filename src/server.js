@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import { checkScore } from './utils/functions';
 import { sinhalaSinglishSwearWords, sinhalaUnicodeSwearWords } from './constants/words';
 
 class Server {
@@ -28,57 +27,37 @@ class Server {
       return res.json(sinhalaUnicodeSwearWords)
     })
 
+    // check for swear words and get detailed description
     this.app.get('/check/:string', (req, res) => {
       const { string } = req.params;
       const words = string.split(' ');
       let matcher = [];
       const allSwearWords = [...sinhalaSinglishSwearWords, ...sinhalaUnicodeSwearWords];
-      const checkWords = req.query.wordWise;
       let data;
       let badWords = [];
       let wordIndexes = [];
+      var Filter = require('bad-words');
+      var filter = new Filter({ list: allSwearWords });
 
-      if (checkWords === '1') {
-        words.map(word => {
-          const check = allSwearWords.includes(word);
-          matcher = [...matcher, check]
-          allSwearWords.filter(bad => bad === word).map(bad => {
-            badWords.push(bad);
-            wordIndexes.push(words.indexOf(bad));
-          })
-
-        });
-
-        data = {
-          containsSwearWords: matcher.includes(true),
-          words: badWords.length > 0 ? badWords : null,
-          wordIndexes: wordIndexes
-        };
-
-      } else {
-        words.map(word => {
-          matcher = checkScore(word);
+      words.map(word => {
+        const check = allSwearWords.includes(word);
+        matcher = [...matcher, check]
+        allSwearWords.filter(bad => bad === word).map(bad => {
+          badWords.push(bad);
+          wordIndexes.push(words.indexOf(bad));
         })
+      });
 
-        if (matcher === null) {
-          data = {
-            score: 0.0,
-            level: 'no-risk',
-            match: null,
-          }
-        } else {
-          data = {
-            score: matcher[0][0],
-            level: 'risk',
-            match: matcher[0][1]
-          }
-        }
-      }
+      data = {
+        containsSwearWords: matcher.includes(true),
+        words: badWords.length > 0 ? badWords : null,
+        wordIndexes: wordIndexes,
+        cleaned: filter.clean(string)
+      };
 
       return res.json(data)
     })
   }
-
 
   server() {
     this.app.listen(5000);
