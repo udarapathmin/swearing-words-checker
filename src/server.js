@@ -60,7 +60,8 @@ class Server {
   }
 
   server() {
-    this.app.listen(5000);
+    const port = process.env.PORT || 5000;
+    this.app.listen(port);
   }
 
 }
